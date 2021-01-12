@@ -3,10 +3,18 @@ package com.aaa.lib.animationtest.model;
 import android.graphics.Color;
 import android.graphics.PointF;
 
+import androidx.core.util.Pools;
+
 import java.util.Random;
 
 public class AnimPoint {
+    public static final int maxPointCount = 100;   //逃逸速度
+    public static int poolCurrentCount=0;
     private final int escapeDistance = 10;   //逃逸速度
+
+    //初始化对象池
+    private static final Pools.SynchronizedPool<AnimPoint> sPool =new Pools.SynchronizedPool<>(maxPointCount);
+
     public float x;
     public float y;
     public float radiu;
@@ -18,28 +26,7 @@ public class AnimPoint {
     public boolean isCatched;
     public int touchLineAlpha;
 
-    public AnimPoint() {
-        Random random = new Random();
-        x = random.nextFloat() * 1000;
-        y = random.nextFloat() * 1900;
-        radiu = random.nextInt(10);
-        speed = random.nextFloat() * 2 + 1;
-        direction = random.nextFloat() * 360;
-        maxLife = random.nextInt(2000) + 500;
-        int a = random.nextInt(155) + 100;
-        int r = random.nextInt(255);
-        int g = random.nextInt(255);
-        int b = random.nextInt(255);
-        color = Color.argb(a, r, g, b);
-    }
-
-    public AnimPoint(float x, float y, float radiu, float speed, float direction, int color) {
-        this.x = x;
-        this.y = y;
-        this.radiu = radiu;
-        this.speed = speed;
-        this.direction = direction;
-        this.color = color;
+    private AnimPoint() {
     }
 
     public void next(float max_w, float max_h, PointF touchPoint, float catchLength, float touchOffX, float touchOffY) {
@@ -104,4 +91,74 @@ public class AnimPoint {
             return false;
         }
     }
+
+    private void initPoint() {
+        Random random = new Random();
+        int a = random.nextInt(155) + 100;
+        int r = random.nextInt(255);
+        int g = random.nextInt(255);
+        int b = random.nextInt(255);
+        x = random.nextFloat() * 1000;
+        y = random.nextFloat() * 1900;
+
+        radiu = random.nextInt(5)+5;
+        color = Color.argb(a, r, g, b);
+        touchLineAlpha = 0;
+
+        speed = random.nextFloat() * 2 + 1;
+        direction = random.nextFloat() * 360;
+
+        life = 0;
+        maxLife = random.nextInt(2000) + 500;
+
+        isCatched = false;
+    }
+
+    /**
+     * 重置对象状态
+     */
+    private void reset() {
+        x = 0;
+        y = 0;
+
+        radiu = 0;
+        color = 0;
+        touchLineAlpha = 0;
+
+        speed = 0;
+        direction = 0;
+
+        life = 0;
+        maxLife = 0;
+
+        isCatched = false;
+    }
+
+    /**
+     * 回收对象：初始化对象-->存入对象池
+     */
+    public void recycle() {
+        this.reset();
+        poolCurrentCount++;
+        sPool.release(this);
+    }
+
+
+    /**
+     * 获取（创建对象）
+     * 默认从对象池中获取，拿不到就new
+     *
+     * @return AnimPoint
+     */
+    public static AnimPoint obtain() {
+        AnimPoint instance = sPool.acquire();
+        if(instance==null){
+            instance=new AnimPoint();
+        }else{
+            poolCurrentCount--;
+        }
+        instance.initPoint();
+        return instance;
+    }
+
 }

@@ -5,7 +5,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -15,18 +18,18 @@ import com.aaa.lib.animationtest.model.AnimPoint;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class NoNameAnimView extends View {
-    private int maxPointCount = 1000;   //最大点的数量
+    private static final String TAG = "NoNameAnimView";
     private float maxLineLength = 150;   //最大连线距离
     private float catchLength = 300;   //最大捕获半径
-    private int maxLife = 100;      //点的生命上限， 每一次刷新增加1点 到最大值时 消失;
     private int duration = 16;     //动画刷新间隔ms
-    private int pointBornDuration = 1000;     //动画刷新间隔ms
     private volatile boolean show = false;  //是否在显示
 
     private Thread refreshThread;       //刷新线程
-    private Thread pointBornThread;       //生成点的线程
+    private Handler handler;
+
     private List<AnimPoint> animPoints;     // 点集
     private List<AnimPoint> survivePoints;     // 存活的点集
 
@@ -56,7 +59,7 @@ public class NoNameAnimView extends View {
 
     private void init() {
         refreshThread = new Thread(new RefreshRunnable());
-        pointBornThread=new Thread(new PointBornRunnable());
+        handler = new Handler(Looper.getMainLooper());
 
         animPoints = new ArrayList<>();
         survivePoints = new ArrayList<>();
@@ -80,15 +83,18 @@ public class NoNameAnimView extends View {
     }
 
     /**
-     *  移除老死的点 添加新点
+     * 移除老死的点 添加新点
      */
-    private void removeDead(){
+    private void removeDead() {
         survivePoints.clear();
-        for(AnimPoint animPoint:animPoints){
-            if(!animPoint.isDead()){
+        for (AnimPoint animPoint : animPoints) {
+            if (!animPoint.isDead()) {
                 survivePoints.add(animPoint);
+            } else {
+                animPoint.recycle();
             }
         }
+        Log.i(TAG, "dead size :" + (animPoints.size() - survivePoints.size()));
         animPoints.clear();
         animPoints.addAll(survivePoints);
     }
@@ -164,7 +170,7 @@ public class NoNameAnimView extends View {
 
     private void initPoint() {
         for (int i = 0; i < 100; i++) {
-            AnimPoint point = new AnimPoint();
+            AnimPoint point = AnimPoint.obtain();
             animPoints.add(point);
         }
         show = true;
@@ -172,28 +178,34 @@ public class NoNameAnimView extends View {
     }
 
     class RefreshRunnable implements Runnable {
+        private int time = 0;
+        private Random random = new Random();
+        final List<AnimPoint> newBornPoint = new ArrayList<>();
 
         @Override
         public void run() {
             while (show) {
                 try {
+                    if (time % 100 == 0) {
+                        if (AnimPoint.poolCurrentCount > AnimPoint.maxPointCount / 2) {
+                            newBornPoint.clear();
+                            int offset = AnimPoint.poolCurrentCount - AnimPoint.maxPointCount / 2;
+                            int newBornCount = random.nextInt(offset * 2);
+                            for (int i = 0; i < newBornCount; i++) {
+                                newBornPoint.add(AnimPoint.obtain());
+                            }
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.i(TAG, "new born size :" + newBornPoint.size());
+                                    animPoints.addAll(newBornPoint);
+                                }
+                            });
+                        }
+                    }
                     Thread.sleep(duration);
                     postInvalidate();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        }
-    }
-    class PointBornRunnable implements Runnable {
-        @Override
-        public void run() {
-            while (show) {
-                try {
-                    Thread.sleep(pointBornDuration);
-
-                    postInvalidate();
+                    time++;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     break;
