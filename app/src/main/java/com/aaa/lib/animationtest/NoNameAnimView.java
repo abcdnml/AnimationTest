@@ -58,9 +58,11 @@ public class NoNameAnimView extends View {
 
     private void drawPoint(Canvas canvas) {
         for (AnimPoint animPoint : animPoints) {
+            // 更新point状态
+            animPoint.next(getWidth(),getHeight());
+            // draw point
             pointPaint.setColor(animPoint.color);
             canvas.drawCircle(animPoint.x, animPoint.y, animPoint.radiu, pointPaint);
-            animPoint.life++;
         }
 
     }
