@@ -17,4 +17,8 @@ public class AnimPoint {
         this.direction = direction;
         this.color = color;
     }
+
+    public void test() {
+        // test
+    }
 }
