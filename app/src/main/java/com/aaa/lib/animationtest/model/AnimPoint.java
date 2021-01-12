@@ -101,7 +101,7 @@ public class AnimPoint {
         x = random.nextFloat() * 1000;
         y = random.nextFloat() * 1900;
 
-        radiu = random.nextInt(5)+5;
+        radiu = random.nextInt(6)+6;
         color = Color.argb(a, r, g, b);
         touchLineAlpha = 0;
 

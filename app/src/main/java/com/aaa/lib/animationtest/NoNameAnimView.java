@@ -126,7 +126,7 @@ public class NoNameAnimView extends View {
             animPoint.next(getWidth(), getHeight(), touchPoint, catchLength, offsetX, offsetY);
             // draw point
             pointPaint.setColor(animPoint.color);
-            canvas.drawCircle(animPoint.x, animPoint.y, 6, pointPaint);
+            canvas.drawCircle(animPoint.x, animPoint.y, animPoint.radiu, pointPaint);
         }
         offsetY = 0;
         offsetX = 0;
