@@ -22,7 +22,7 @@ import java.util.Random;
 
 public class NoNameAnimView extends View {
     private static final String TAG = "NoNameAnimView";
-    private float maxLineLength = 150;   //最大连线距离
+    private float maxLineLength = 200;   //最大连线距离
     private float catchLength = 300;   //最大捕获半径
     private int duration = 16;     //动画刷新间隔ms
     private volatile boolean show = false;  //是否在显示
@@ -76,10 +76,10 @@ public class NoNameAnimView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         removeDead();
         drawPoint(canvas);
         drawLine(canvas);
+
     }
 
     /**
@@ -132,6 +132,8 @@ public class NoNameAnimView extends View {
         offsetX = 0;
     }
 
+
+
     private void drawLine(Canvas canvas) {
         for (int i = 0; i < animPoints.size(); i++) {
             AnimPoint pi = animPoints.get(i);
@@ -139,7 +141,7 @@ public class NoNameAnimView extends View {
                 AnimPoint pj = animPoints.get(j);
                 double distance = distance(pi, pj);
                 if (distance <= maxLineLength) {
-                    int color = Color.argb(255 - (int) (distance / maxLineLength * 255), 0, 0, 0);
+                    int color = Color.argb(255 - (int) (distance / maxLineLength * 255), 128, 128, 128);
                     pathPaint.setColor(color);
                     canvas.drawLine(pi.x, pi.y, pj.x, pj.y, pathPaint);
                 }
@@ -169,7 +171,7 @@ public class NoNameAnimView extends View {
     }
 
     private void initPoint() {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < AnimPoint.maxPointCount; i++) {
             AnimPoint point = AnimPoint.obtain();
             animPoints.add(point);
         }
@@ -186,7 +188,7 @@ public class NoNameAnimView extends View {
         public void run() {
             while (show) {
                 try {
-                    if (time % 100 == 0) {
+                    if (time % 32 == 0) {
                         if (AnimPoint.poolCurrentCount > AnimPoint.maxPointCount / 2) {
                             newBornPoint.clear();
                             int offset = AnimPoint.poolCurrentCount - AnimPoint.maxPointCount / 2;

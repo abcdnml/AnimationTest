@@ -8,12 +8,12 @@ import androidx.core.util.Pools;
 import java.util.Random;
 
 public class AnimPoint {
-    public static final int maxPointCount = 100;   //逃逸速度
-    public static int poolCurrentCount=0;
-    private final int escapeDistance = 10;   //逃逸速度
+    public static final int maxPointCount = 100;   //最大点的数量
+    public static int poolCurrentCount = 0;
+    private final int escapeDistance = 20;   //逃逸速度
 
     //初始化对象池
-    private static final Pools.SynchronizedPool<AnimPoint> sPool =new Pools.SynchronizedPool<>(maxPointCount);
+    private static final Pools.SynchronizedPool<AnimPoint> sPool = new Pools.SynchronizedPool<>(maxPointCount);
 
     public float x;
     public float y;
@@ -53,19 +53,20 @@ public class AnimPoint {
         } else {
             double distance = distance(tempX, tempY, touchPoint.x, touchPoint.y);
             if (isCatched) {
+
                 if (distance < catchLength) {
                     x = tempX;
                     y = tempY;
                 } else {
-                    if (touchOffX > escapeDistance || touchOffY > escapeDistance) {
-                        //逃逸
-                        isCatched = false;
-                    } else {
-                        x += touchOffX;
-                        y += touchOffY;
-                    }
+                    double angle = Math.atan2(touchPoint.x - tempX, touchPoint.y - tempY);
+                    double rx = Math.sin(angle) * catchLength;
+                    rx = touchPoint.x - tempX - rx;
+                    double ry = Math.cos(angle) * catchLength;
+                    ry = touchPoint.y - tempY - ry;
+                    x = tempX + (float) rx;
+                    y = tempY + (float) ry;
                 }
-                touchLineAlpha = 255 - (int) (distance / catchLength * 255);
+                touchLineAlpha = 25;
             } else {
                 // 是否捕获
                 if (distance <= catchLength) {
@@ -101,7 +102,7 @@ public class AnimPoint {
         x = random.nextFloat() * 1000;
         y = random.nextFloat() * 1900;
 
-        radiu = random.nextInt(6)+6;
+        radiu = random.nextInt(6) + 6;
         color = Color.argb(a, r, g, b);
         touchLineAlpha = 0;
 
@@ -109,7 +110,7 @@ public class AnimPoint {
         direction = random.nextFloat() * 360;
 
         life = 0;
-        maxLife = random.nextInt(2000) + 500;
+        maxLife = random.nextInt(2000) + 1000;
 
         isCatched = false;
     }
@@ -152,9 +153,9 @@ public class AnimPoint {
      */
     public static AnimPoint obtain() {
         AnimPoint instance = sPool.acquire();
-        if(instance==null){
-            instance=new AnimPoint();
-        }else{
+        if (instance == null) {
+            instance = new AnimPoint();
+        } else {
             poolCurrentCount--;
         }
         instance.initPoint();
